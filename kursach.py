@@ -15,21 +15,34 @@ class Field:
 
 class Goal:
     def __init__(self, x, y):
-        self.position = XY(x, y)
+        self.x = x
         self.__width = 7.32
-        self.post1 = self.position.y + self.__width / 2
-        self.post2 = self.position.y - self.__width / 2
+        self.post1 = y + self.__width / 2
+        self.post2 = y - self.__width / 2
 
-# class PenaltyArea(Field):
-#     def __init__(self, length, width):
-#         super().__init__(length, width)
-#         self.position = XY()
+class PenaltyArea:
+    def __init__(self, x0, y_center):
+        self.x0 = x0
+        self.__y_center = y_center
+        self.__length = 16
+        self.__width = 40
+        if self.x0 == 0:
+            self.x1 = self.x0 + self.__length
+            self.y0 = self.__y_center - self.__width / 2
+            self.y1 = self.__y_center + self.__width / 2
+        else:
+            self.x1 = self.x0
+            self.x0 = self.x0 - self.__length
+            self.y0 = self.__y_center - self.__width / 2
+            self.y1 = self.__y_center + self.__width / 2
 
 class Pitch(Field):
     def __init__(self, length, width):
         super().__init__(length, width)
         self.goal1 = Goal(0, self.width / 2)
         self.goal2 = Goal(self.length, self.width / 2)
+        self.penalty1 = PenaltyArea(0, self.width / 2)
+        self.penalty2 = PenaltyArea(self.length, self.width / 2)
 
 class Basket:
     def __init__(self, x, y):
@@ -90,7 +103,6 @@ class SRS:
             return True
         return False
 
-
 # FRS - Football Refereeing System (футбольчик)
 class FRS(SRS):
     def __init__(self, field):
@@ -107,23 +119,26 @@ class FRS(SRS):
         left = self.field.goal1
         right = self.field.goal2
         if (
-            ball.position.x > right.position.x and
+            ball.position.x > right.x and
             ball.position.y < right.post1 and
             ball.position.y > right.post2
         ):
             tablo.score["team1"] += 1
-        if (
-            ball.position.x < left.position.x and
+        elif (
+            ball.position.x < left.x and
             ball.position.y < left.post1 and
             ball.position.y > left.post2
         ):
             tablo.score["team2"] += 1
+        else:
+            print("Нет гола")
 
 # #BRS - Basketball Refereeing System (футбольчик)
 # class BRS(SRS):
 
+### Инициализация пока что такая
 pole = Pitch(105, 68)
-kort = Court(28, 15)
+# kort = Court(28, 15)
 ref = FRS(pole)
 liver = Team("Liverpool")
 tablo = Scoreboard(liver.name, "team2")
