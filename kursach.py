@@ -1,3 +1,5 @@
+import math
+
 class XY:
     def __init__(self, x, y):
         self.x = x
@@ -49,12 +51,22 @@ class Basket:
         self.position = XY(x, y)
         self.__rimradius = 0.225
 
+class ThreePtLine:
+    def __init__(self, basket: Basket, radius = 6.75):
+        self.__position = basket.position
+        self.radius = radius
+    def is_threept(self, shooter: Basketballer):
+        return math.hypot(shooter.position.x - self.__position.x,
+                          shooter.position.y - self.__position.y) > self.radius
+
 class Court(Field):
     def __init__(self, length, width):
         super().__init__(length, width)
         self.__backboard = 1.575
         self.basket1 = Basket(0 + self.__backboard, self.width / 2)
         self.basket2 = Basket(self.length - self.__backboard, self.width / 2)
+        self.threept1 = ThreePtLine(self.basket1)
+        self.threept2 = ThreePtLine(self.basket2)
 
 class Ball:
     def __init__(self, x, y):
@@ -69,6 +81,8 @@ class Player:
         self.team = team
         self.number = number
         team.players.append(self)
+    def move(self, x, y):
+        self.position = XY(x, y)
 
 class Footballer(Player):
     def __init__(self, x, y, team, number):
@@ -90,8 +104,9 @@ class Scoreboard:
 
 #SRS - Sports Refereeing System (система судйества спортивных игр)
 class SRS:
-    def __init__(self, field):
+    def __init__(self, field, tablo):
         self.field = field
+        self.tablo = tablo
     def check_out(self, ball: Ball):
         if(
             ball.position.x < 0 or
@@ -105,8 +120,8 @@ class SRS:
 
 # FRS - Football Refereeing System (футбольчик)
 class FRS(SRS):
-    def __init__(self, field):
-        super().__init__(field)
+    def __init__(self, field, tablo):
+        super().__init__(field, tablo)
     def booking(self, fouler: Footballer):
         fouler.cards["Y"] += 1
         print("Предупреждение игроку")
@@ -115,7 +130,7 @@ class FRS(SRS):
     def send_off(self, fouler: Footballer):
         fouler.cards["R"] += 1
         print("Игрок должен покинуть поле")
-    def check_score(self, ball: Ball, tablo: Scoreboard):
+    def check_score(self, ball: Ball):
         left = self.field.goal1
         right = self.field.goal2
         if (
@@ -123,37 +138,92 @@ class FRS(SRS):
             ball.position.y < right.post1 and
             ball.position.y > right.post2
         ):
-            tablo.score["team1"] += 1
+            self.tablo.score["team1"] += 1
         elif (
             ball.position.x < left.x and
             ball.position.y < left.post1 and
             ball.position.y > left.post2
         ):
-            tablo.score["team2"] += 1
+            self.tablo.score["team2"] += 1
         else:
             print("Нет гола")
 
 # #BRS - Basketball Refereeing System (футбольчик)
-# class BRS(SRS):
+class BRS(SRS):
+    def __init__(self, field, tablo):
+        super().__init__(field, tablo)
+    def foul(self, fouler: Basketballer):
+        fouler.fouls += 1
+        self.check_fouls(fouler)
+    def shooting_foul(self, fouler: Basketballer, fouled: Basketballer):
+        print("Бросковый фол")
+        fouler.fouls += 1
+        if self.calculate_points(fouled) == 3:
+            print("При промахе назначить три штрафных броска")
+        else:
+            print("При промахе назначить два штрафных броска")
+    def check_fouls(self, fouler: Basketballer):
+        if fouler.fouls > 5:
+            print("Игрок должен покинуть корт")
+    def calculate_points(self, shooter: Basketballer):
+        if shooter.team.name == self.tablo.team1:
+            threept_line = self.field.threept2
+        else:
+            threept_line = self.field.threept1
+        return 3 if threept_line.is_threept(shooter) else 2
+    def check_score(self, shooter: Basketballer):
+        if shooter.team.name == self.tablo.team1:
+            points = self.calculate_points(shooter)
+            self.tablo.score["team1"] += points
+        else:
+            points = self.calculate_points(shooter)
+            self.tablo.score["team2"] += points
+
 
 ### Инициализация пока что такая
-pole = Pitch(105, 68)
+# pole = Pitch(105, 68)
 # kort = Court(28, 15)
-ref = FRS(pole)
-liver = Team("Liverpool")
-tablo = Scoreboard(liver.name, "team2")
-vvd = Footballer(20, 30, liver, 4)
 
-### Система определения голов работает
-# football = Ball(0, 34)
-# ref.check_score(football, tablo)
+# liver = Team("Liverpool")
+# city = Team("City")
+# tablo = Scoreboard(liver.name, city.name)
+# ref = FRS(pole, tablo)
+# vvd = Footballer(20, 30, liver, 4)
+
+# gsw = Team("GSW")
+# ptb = Team("PTB")
+# tablo = Scoreboard(gsw.name, ptb.name)
+# ref = BRS(kort, tablo)
+# curry = Basketballer(15, 7, gsw, 30)
+# sharpe = Basketballer(15, 7, ptb, 17)
+
+# Система определения голов работает
+# football = Ball(-0.1, 34)
+# ref.check_score(football)
 # football.move(105.1, 34)
-# ref.check_score(football, tablo)
+# ref.check_score(football)
 # tablo.display()
 
-### Карточки выдаются правильно
+# Карточки выдаются правильно
 # ref.booking(vvd)
 # ref.booking(vvd)
 # ref.send_off(vvd)
+
+# Определение очков работает правильно
+# ref.check_score(curry)
+# ref.check_score(sharpe)
+# tablo.display()
+# curry.move(25, 7)
+# sharpe.move(25, 7)
+# ref.check_score(curry)
+# ref.check_score(sharpe)
+# tablo.display()
+# curry.move(5, 7)
+# sharpe.move(5, 7)
+# ref.shooting_foul(curry, sharpe)
+# ref.shooting_foul(sharpe, curry)
+# ref.check_score(curry)
+# ref.check_score(sharpe)
+# tablo.display()
 
 print('чек')
