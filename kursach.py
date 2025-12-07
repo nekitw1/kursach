@@ -37,6 +37,10 @@ class PenaltyArea:
             self.x0 = self.x0 - self.__length
             self.y0 = self.__y_center - self.__width / 2
             self.y1 = self.__y_center + self.__width / 2
+    def is_penalty(self, fouled: Footballer):
+        x_inside = self.x0 <= fouled.position.x <= self.x1
+        y_inside = self.y0 <= fouled.position.y <= self.y1
+        return x_inside and y_inside
 
 class Pitch(Field):
     def __init__(self, length, width):
@@ -122,6 +126,11 @@ class SRS:
 class FRS(SRS):
     def __init__(self, field, tablo):
         super().__init__(field, tablo)
+    def foul(self, fouler: Footballer, fouled: Footballer):
+        if self.field.is_penalty(fouled):
+            print("Фол в пределах штрафной - пенальти")
+        else:
+            print("Фол. Должен назначить свободный удар")
     def booking(self, fouler: Footballer):
         fouler.cards["Y"] += 1
         print("Предупреждение игроку")
@@ -133,17 +142,9 @@ class FRS(SRS):
     def check_score(self, ball: Ball):
         left = self.field.goal1
         right = self.field.goal2
-        if (
-            ball.position.x > right.x and
-            ball.position.y < right.post1 and
-            ball.position.y > right.post2
-        ):
+        if ball.position.x > right.x and right.post1 > ball.position.y > right.post2:
             self.tablo.score["team1"] += 1
-        elif (
-            ball.position.x < left.x and
-            ball.position.y < left.post1 and
-            ball.position.y > left.post2
-        ):
+        elif ball.position.x < left.x and left.post1 > ball.position.y > left.post2:
             self.tablo.score["team2"] += 1
         else:
             print("Нет гола")
@@ -155,13 +156,6 @@ class BRS(SRS):
     def foul(self, fouler: Basketballer):
         fouler.fouls += 1
         self.check_fouls(fouler)
-    def shooting_foul(self, fouler: Basketballer, fouled: Basketballer):
-        print("Бросковый фол")
-        fouler.fouls += 1
-        if self.calculate_points(fouled) == 3:
-            print("При промахе назначить три штрафных броска")
-        else:
-            print("При промахе назначить два штрафных броска")
     def check_fouls(self, fouler: Basketballer):
         if fouler.fouls > 5:
             print("Игрок должен покинуть корт")
@@ -171,6 +165,13 @@ class BRS(SRS):
         else:
             threept_line = self.field.threept1
         return 3 if threept_line.is_threept(shooter) else 2
+    def shooting_foul(self, fouler: Basketballer, fouled: Basketballer):
+        print("Бросковый фол")
+        fouler.fouls += 1
+        if self.calculate_points(fouled) == 3:
+            print("При промахе назначить три штрафных броска")
+        else:
+            print("При промахе назначить два штрафных броска")
     def check_score(self, shooter: Basketballer):
         if shooter.team.name == self.tablo.team1:
             points = self.calculate_points(shooter)
@@ -179,23 +180,15 @@ class BRS(SRS):
             points = self.calculate_points(shooter)
             self.tablo.score["team2"] += points
 
+# Футбол
 
-### Инициализация пока что такая
 # pole = Pitch(105, 68)
-# kort = Court(28, 15)
 
 # liver = Team("Liverpool")
 # city = Team("City")
 # tablo = Scoreboard(liver.name, city.name)
 # ref = FRS(pole, tablo)
 # vvd = Footballer(20, 30, liver, 4)
-
-# gsw = Team("GSW")
-# ptb = Team("PTB")
-# tablo = Scoreboard(gsw.name, ptb.name)
-# ref = BRS(kort, tablo)
-# curry = Basketballer(15, 7, gsw, 30)
-# sharpe = Basketballer(15, 7, ptb, 17)
 
 # Система определения голов работает
 # football = Ball(-0.1, 34)
@@ -208,6 +201,17 @@ class BRS(SRS):
 # ref.booking(vvd)
 # ref.booking(vvd)
 # ref.send_off(vvd)
+
+# Баскетбол
+
+# kort = Court(28, 15)
+
+# gsw = Team("GSW")
+# ptb = Team("PTB")
+# tablo = Scoreboard(gsw.name, ptb.name)
+# ref = BRS(kort, tablo)
+# curry = Basketballer(15, 7, gsw, 30)
+# sharpe = Basketballer(15, 7, ptb, 17)
 
 # Определение очков работает правильно
 # ref.check_score(curry)
