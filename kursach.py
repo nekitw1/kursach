@@ -126,7 +126,7 @@ class SRS:
 class FRS(SRS):
     def __init__(self, field, tablo):
         super().__init__(field, tablo)
-    def foul(self, fouler: Footballer, fouled: Footballer):
+    def foul(self, fouled: Footballer):
         if fouled.team.name == tablo.team1:
             if self.field.penalty2.is_penalty(fouled):
                 print("Фол в пределах штрафной - пенальти")
@@ -208,7 +208,7 @@ tablo.display()
 # ref.booking(vvd)
 # ref.booking(vvd)
 # ref.send_off(vvd)
-# ref.foul(vvd, haaland)
+ref.foul(haaland)
 
 # Баскетбол
 
