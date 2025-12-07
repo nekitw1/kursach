@@ -127,7 +127,7 @@ class FRS(SRS):
     def __init__(self, field, tablo):
         super().__init__(field, tablo)
     def foul(self, fouled: Footballer):
-        if fouled.team.name == tablo.team1:
+        if fouled.team.name == self.tablo.team1:
             if self.field.penalty2.is_penalty(fouled):
                 print("Фол в пределах штрафной - пенальти")
             else:
@@ -196,13 +196,13 @@ tablo = Scoreboard(liver.name, city.name)
 ref = FRS(pole, tablo)
 vvd = Footballer(10, 30, liver, 4)
 haaland = Footballer(10, 34, city, 9)
-
-# Система определения голов работает
-football = Ball(-0.1, 34)
-ref.check_score(football)
-football.move(105.1, 34)
-ref.check_score(football)
-tablo.display()
+#
+# # Система определения голов работает
+# football = Ball(-0.1, 34)
+# ref.check_score(football)
+# football.move(105.1, 34)
+# ref.check_score(football)
+# tablo.display()
 
 # Карточки выдаются правильно
 # ref.booking(vvd)
