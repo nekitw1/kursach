@@ -348,7 +348,6 @@ class GameController:
             if cmd == "0":
                 return
 
-            # --- ПОЛНЫЙ МАТЧ ---
             if cmd == "1":
                 filename = input("Введите имя JSON файла (Enter = actions.json): ")
                 if filename.strip() == "":
@@ -361,7 +360,6 @@ class GameController:
                 print("\n>>> ПОЛНЫЙ МАТЧ ЗАКОНЧЕН. Возврат в главное меню.\n")
                 continue
 
-            # --- ЭПИЗОД ---
             elif cmd == "2":
                 print("\n=== РЕЖИМ ЭПИЗОДОВ ===")
                 filename = input("Введите имя JSON файла (Enter = actions.json): ")
@@ -375,7 +373,12 @@ class GameController:
                     print("\nВыберите действие:")
                     print("1 — check_score")
                     print("2 — check_out")
-                    print("3 — foul")
+
+                    if isinstance(self.referee, FRS):
+                        print("3 — foul")
+                    else:
+                        print("3 — shooting_foul")
+
                     print("0 — назад")
 
                     sub = input("> ")
@@ -384,47 +387,120 @@ class GameController:
                         break
 
                     if sub == "1":
-                        self.rules.handle_score(self.referee, self.ball, self.teams)
+
+                        if isinstance(self.referee, FRS):
+                            self.rules.handle_score(self.referee, self.ball, self.teams)
+
+                        else:
+                            print("Введите данные бросающего игрока:")
+
+                            team_name = input("Команда: ")
+                            if team_name not in self.teams:
+                                print("Нет такой команды.")
+                                continue
+
+                            try:
+                                number = int(input("Номер игрока: "))
+                            except:
+                                print("Некорректный номер.")
+                                continue
+
+                            shooter = self.teams[team_name].get_player(number)
+                            if not shooter:
+                                print("Нет такого игрока.")
+                                continue
+
+                            self.rules.handle_score(self.referee, self.ball, self.teams, shooter=shooter)
+
                         self.tablo.display()
+
 
                     elif sub == "2":
                         self.referee.check_out(self.ball)
 
                     elif sub == "3":
+
                         team_name = input("Команда нарушителя: ")
+
                         if team_name not in self.teams:
                             print("Нет такой команды.")
+
                             continue
 
                         try:
+
                             num_fouler = int(input("Номер нарушителя: "))
+
                         except:
+
                             print("Некорректный номер.")
+
                             continue
 
                         fouler = self.teams[team_name].get_player(num_fouler)
+
                         if not fouler:
                             print("Нет такого игрока.")
+
                             continue
 
                         if isinstance(fouler, Footballer):
+
                             team_fouled = input("Команда пострадавшего: ")
+
                             try:
+
                                 num_fouled = int(input("Номер пострадавшего: "))
+
                             except:
+
                                 print("Некорректный номер.")
+
                                 continue
 
-                            fouled = self.teams.get(team_fouled, None)
-                            if fouled:
-                                fouled = fouled.get_player(num_fouled)
+                            fouled_team = self.teams.get(team_fouled)
+
+                            fouled = fouled_team.get_player(num_fouled) if fouled_team else None
 
                             if not fouled:
-                                print("Нет такого пострадавшего игрока.")
+                                print("Нет такого игрока.")
+
                                 continue
 
                             print("Футбольный фол:")
-                            self.rules.handle_foul(self.referee, self.teams, fouler=fouler, fouled=fouled)
+
+                            self.rules.handle_foul(self.referee, self.teams,
+
+                                                   fouler=fouler, fouled=fouled)
+
+                        else:
+
+                            print("Бросковый фол:")
+
+                            team_fouled = input("Команда пострадавшего: ")
+
+                            try:
+
+                                num_fouled = int(input("Номер пострадавшего: "))
+
+                            except:
+
+                                print("Некорректный номер.")
+
+                                continue
+
+                            fouled_team = self.teams.get(team_fouled)
+
+                            fouled = fouled_team.get_player(num_fouled) if fouled_team else None
+
+                            if not fouled:
+                                print("Нет такого игрока.")
+
+                                continue
+
+                            self.rules.handle_foul(self.referee, self.teams,
+
+                                                   type="shooting", fouler=fouler, fouled=fouled)
 
             else:
                 print("Неизвестная команда")
