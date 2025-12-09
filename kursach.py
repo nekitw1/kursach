@@ -1,7 +1,5 @@
 import math
 import json
-import os
-
 
 class XY:
     def __init__(self, x, y):
@@ -99,37 +97,25 @@ class Scoreboard:
     def display(self):
         print(f"--- СЧЕТ: {self.team1} [{self.score['team1']}] : [{self.score['team2']}] {self.team2} ---")
 
-# --- СИСТЕМЫ СУДЕЙСТВА (Referees) ---
-
 class SRS:
     def __init__(self, field, tablo):
         self.field = field; self.tablo = tablo
     def check_out(self, ball: Ball):
-        out = False
         if ball.position.x < 0 or ball.position.x > self.field.length \
                 or ball.position.y < 0 or ball.position.y > self.field.width:
             print(">>> СУДЬЯ: Аут!")
-            out = True
         else:
             print(">>> СУДЬЯ: Мяч в поле.")
-        if out and ball.owner:
-            last_team = ball.owner.team.name
-            if last_team == self.tablo.team1:
-                receiving = self.tablo.team2
-            else:
-                receiving = self.tablo.team1
-            print(f">>> СУДЬЯ: Право вбрасывания — у команды {receiving}")
-        return out
 
 class FRS(SRS):
-    def foul(self, fouled: Footballer):
+    def foul(self, fouler: Footballer, fouled: Footballer):
         if fouled.team.name == self.tablo.team1:
-            if self.field.penalty2.is_penalty(fouled):
+            if self.field.penalty2.is_inside(fouled):
                 print(">>> СУДЬЯ: ПЕНАЛЬТИ!")
             else:
                 print(">>> СУДЬЯ: Свободный удар.")
         else:
-            if self.field.penalty1.is_penalty(fouled):
+            if self.field.penalty1.is_inside(fouled):
                 print(">>> СУДЬЯ: ПЕНАЛЬТИ!")
             else:
                 print(">>> СУДЬЯ: Свободный удар.")
@@ -178,8 +164,6 @@ class BRS(SRS):
             self.tablo.score["team2"] += points
         print(f">>> СУДЬЯ: +{points} очков команде {shooter.team.name}!")
 
-# --- ЛОГИКА ИГРЫ (RULES & CONTROLLER) ---
-
 class GameRules:
     def create_field(self): raise NotImplementedError
     def create_referee(self, field, tablo): raise NotImplementedError
@@ -190,121 +174,264 @@ class GameRules:
 
 class FootballRules(GameRules):
     def create_field(self):
+        # Стандартные размеры футбольного поля (пример)
         return Pitch(105, 68)
+
     def create_referee(self, field, tablo):
         return FRS(field, tablo)
+
     def create_player(self, x, y, team, number):
         return Footballer(x, y, team, number)
+
     def get_initial_ball_pos(self):
-        return XY(52.5, 34)
-    def handle_score(self, referee, ball, teams, **kwargs):
+        # Центр поля
+        return 52.5, 34
+
+    def handle_score(self, referee: FRS, ball: Ball, teams, **kwargs):
         referee.check_score(ball)
-    def handle_foul(self, referee, teams, **kwargs):
-        t1, t2 = teams.get(kwargs.get("fouler_team")), teams.get(kwargs.get("fouled_team"))
-        if t1 and t2:
-            p1, p2 = t1.get_player(kwargs.get("fouler_num")), t2.get_player(kwargs.get("fouled_num"))
-            if p1 and p2:
-                referee.foul(p1, p2)
-                referee.booking(p1)
-            else:
-                print("! Игрок не найден")
-        else:
-            print("! Для футбольного фола нужны две команды")
+
+    def handle_foul(self, referee: FRS, teams, **kwargs):
+        fouler = kwargs.get("fouler")
+        fouled = kwargs.get("fouled")
+        if fouler and fouled:
+            referee.foul(fouler, fouled)
 
 class BasketballRules(GameRules):
     def create_field(self):
+        # Стандартный игровой корт 28 × 15 м (пример)
         return Court(28, 15)
+
     def create_referee(self, field, tablo):
         return BRS(field, tablo)
+
     def create_player(self, x, y, team, number):
         return Basketballer(x, y, team, number)
+
     def get_initial_ball_pos(self):
-        return XY(14, 7.5)
-    def handle_score(self, referee, ball, teams, **kwargs):
-        t = teams.get(kwargs.get("team"))
-        if t:
-            p = t.get_player(kwargs.get("number"))
-            if p:
-                referee.check_score(p)
-            else:
-                print("! Игрок не найден")
+        # Центр корта
+        return (14, 7.5)
+
+    def handle_score(self, referee: BRS, ball, teams, **kwargs):
+        shooter = kwargs.get("shooter")
+        if shooter:
+            referee.check_score(shooter)
+
+    def handle_foul(self, referee: BRS, teams, **kwargs):
+        foul_type = kwargs.get("type")
+        fouler = kwargs.get("fouler")
+        fouled = kwargs.get("fouled")
+
+        if foul_type == "technical":
+            referee.technical_foul(fouler)
+        elif foul_type == "shooting":
+            referee.shooting_foul(fouler, fouled)
         else:
-            print("! Для баскетбола нужно указать команду бросающего")
-    def handle_foul(self, referee, teams, **kwargs):
-        t = teams.get(kwargs.get("fouler_team"))
-        if t:
-            p = t.get_player(kwargs.get("fouler_num"))
-            if p:
-                referee.foul(p)
-            else:
-                print("! Игрок не найден")
+            referee.foul(fouler)
 
 class GameController:
     def __init__(self):
-        self.teams = {}; self.ball = None; self.ref = None
-        self.field = None; self.tablo = None; self.rules = None
-    def setup_game(self, game_type, team1_name, team2_name):
-        rules_map = {"football": FootballRules(), "basketball": BasketballRules()}
-        self.rules = rules_map.get(game_type)
-        if not self.rules: return print(f"! Неизвестный тип игры: {game_type}")
+        self.rules = None
+        self.field = None
+        self.referee = None
+        self.ball = None
+        self.teams = {}
+        self.tablo = None
 
-        self.teams = {team1_name: Team(team1_name), team2_name: Team(team2_name)}
-        self.tablo = Scoreboard(team1_name, team2_name)
+    def load_actions(self, filename="actions.json"):
+        with open(filename, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def setup_game(self, game_type, team1, team2):
+        if game_type == "football":
+            self.rules = FootballRules()
+        elif game_type == "basketball":
+            self.rules = BasketballRules()
+        else:
+            raise ValueError("Неизвестный тип игры")
+
+        self.teams[team1] = Team(team1)
+        self.teams[team2] = Team(team2)
+
         self.field = self.rules.create_field()
-        self.ref = self.rules.create_referee(self.field, self.tablo)
-        pos = self.rules.get_initial_ball_pos()
-        self.ball = Ball(pos.x, pos.y)
-        print(f"--- Матч {game_type.upper()} начался: {team1_name} vs {team2_name} ---")
-    def load_scenario(self, filename):
-        if not os.path.exists(filename):
-            print(f"! Файл {filename} не найден.")
-            return
-        print(f"\n--- ЧТЕНИЕ СЦЕНАРИЯ ИЗ {filename} ---")
-        with open(filename, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            self.process_json_actions(data)
-        print("--- КОНЕЦ СЦЕНАРИЯ ---\n")
-    def process_json_actions(self, actions):
-        if not isinstance(actions, list): actions = json.loads(actions)
+
+        self.tablo = Scoreboard(team1, team2)
+
+        self.referee = self.rules.create_referee(self.field, self.tablo)
+
+        bx, by = self.rules.get_initial_ball_pos()
+        self.ball = Ball(bx, by)
+
+        print(f">>> Игра создана: {game_type.upper()}, {team1} vs {team2}")
+
+    def add_player(self, team, number, x, y):
+        self.rules.create_player(x, y, self.teams[team], number)
+        print(f">>> Добавлен игрок {number} в команду {team}")
+
+    def move_ball(self, x, y):
+        self.ball.move(x, y)
+        print(f">>> Мяч перемещён в ({x}, {y})")
+
+    def process_actions(self, actions):
         for act in actions:
-            cmd = act.get("action")
-            print(f"[Действие]: {cmd}")
-            if cmd == "setup":
+            if act["action"] == "setup":
                 self.setup_game(act["type"], act["team1"], act["team2"])
-            elif cmd == "add_player":
-                if self.rules:
-                    team = self.teams.get(act["team"])
-                    if team:
-                        self.rules.create_player(act["x"], act["y"], team, act["number"])
-                        print(f"  + Игрок #{act['number']} в команду {act['team']}")
-            elif cmd == "move_ball":
-                if self.ball: self.ball.move(act["x"], act["y"])
-            elif cmd == "move_player":
-                t = self.teams.get(act["team"])
-                if t:
-                    p = t.get_player(act["number"])
-                    if p: p.move(act["x"], act["y"])
-            elif cmd == "check_score":
-                if self.rules:
-                    self.rules.handle_score(self.ref, self.ball, self.teams, **act)
-                    self.tablo.display()
-            elif cmd == "check_out":
-                if self.ref: self.ref.check_out(self.ball)
-            elif cmd == "foul":
-                if self.rules: self.rules.handle_foul(self.ref, self.teams, **act)
+
+            elif act["action"] == "add_player":
+                self.add_player(act["team"], act["number"], act["x"], act["y"])
+
+            elif act["action"] == "move_ball":
+                self.move_ball(act["x"], act["y"])
+
+            elif act["action"] == "check_score":
+                if isinstance(self.referee, FRS):  # football
+                    self.rules.handle_score(self.referee, self.ball, self.teams)
+                else:  # basketball
+                    shooter_team = act.get("team")
+                    shooter_number = act.get("number")
+                    shooter = self.teams[shooter_team].get_player(shooter_number)
+                    self.rules.handle_score(self.referee, self.ball, self.teams, shooter=shooter)
+
+                self.tablo.display()
+
+            elif act["action"] == "check_out":
+                self.referee.check_out(self.ball)
+
+            elif act["action"] == "foul":
+                fouler = self.teams[act["team_fouler"]].get_player(act["fouler"])
+                fouled = self.teams[act["team_fouled"]].get_player(act["fouled"])
+
+                self.rules.handle_foul(
+                    self.referee,
+                    self.teams,
+                    fouler=fouler,
+                    fouled=fouled,
+                    type="personal"
+                )
+
+            elif act["action"] == "technical_foul":
+                fouler = self.teams[act["team"]].get_player(act["number"])
+                self.rules.handle_foul(
+                    self.referee,
+                    self.teams,
+                    type="technical",
+                    fouler=fouler
+                )
+
+            elif act["action"] == "shooting_foul":
+                fouler = self.teams[act["team_fouler"]].get_player(act["fouler"])
+                fouled = self.teams[act["team_fouled"]].get_player(act["fouled"])
+                self.rules.handle_foul(
+                    self.referee,
+                    self.teams,
+                    type="shooting",
+                    fouler=fouler,
+                    fouled=fouled
+                )
+
+            elif act["action"] == "booking":
+                fouler = self.teams[act["team"]].get_player(act["number"])
+                self.referee.booking(fouler)
+
+            elif act["action"] == "send_off":
+                fouler = self.teams[act["team"]].get_player(act["number"])
+                self.referee.send_off(fouler)
+
+    def console_menu(self):
+        while True:
+            print("\n=== ГЛАВНОЕ МЕНЮ ===")
+            print("1 — Загрузить полный матч")
+            print("2 — Запустить эпизод (ручной режим)")
+            print("0 — Выход")
+
+            cmd = input("> ")
+
+            if cmd == "0":
+                return
+
+            # --- ПОЛНЫЙ МАТЧ ---
+            if cmd == "1":
+                filename = input("Введите имя JSON файла (Enter = actions.json): ")
+                if filename.strip() == "":
+                    filename = "actions.json"
+
+                actions = self.load_actions(filename)
+                print("\n>>> ЗАГРУЗКА ПОЛНОГО МАТЧА...\n")
+                self.process_actions(actions)
+
+                print("\n>>> ПОЛНЫЙ МАТЧ ЗАКОНЧЕН. Возврат в главное меню.\n")
+                continue
+
+            # --- ЭПИЗОД ---
+            elif cmd == "2":
+                print("\n=== РЕЖИМ ЭПИЗОДОВ ===")
+                filename = input("Введите имя JSON файла (Enter = actions.json): ")
+                if filename.strip() == "":
+                    filename = "actions.json"
+
+                actions = self.load_actions(filename)
+                print("\n>>> ЗАГРУЗКА ЭПИЗОДА...\n")
+                self.process_actions(actions)
+                while True:
+                    print("\nВыберите действие:")
+                    print("1 — check_score")
+                    print("2 — check_out")
+                    print("3 — foul")
+                    print("0 — назад")
+
+                    sub = input("> ")
+
+                    if sub == "0":
+                        break
+
+                    if sub == "1":
+                        self.rules.handle_score(self.referee, self.ball, self.teams)
+                        self.tablo.display()
+
+                    elif sub == "2":
+                        self.referee.check_out(self.ball)
+
+                    elif sub == "3":
+                        team_name = input("Команда нарушителя: ")
+                        if team_name not in self.teams:
+                            print("Нет такой команды.")
+                            continue
+
+                        try:
+                            num_fouler = int(input("Номер нарушителя: "))
+                        except:
+                            print("Некорректный номер.")
+                            continue
+
+                        fouler = self.teams[team_name].get_player(num_fouler)
+                        if not fouler:
+                            print("Нет такого игрока.")
+                            continue
+
+                        if isinstance(fouler, Footballer):
+                            team_fouled = input("Команда пострадавшего: ")
+                            try:
+                                num_fouled = int(input("Номер пострадавшего: "))
+                            except:
+                                print("Некорректный номер.")
+                                continue
+
+                            fouled = self.teams.get(team_fouled, None)
+                            if fouled:
+                                fouled = fouled.get_player(num_fouled)
+
+                            if not fouled:
+                                print("Нет такого пострадавшего игрока.")
+                                continue
+
+                            print("Футбольный фол:")
+                            self.rules.handle_foul(self.referee, self.teams, fouler=fouler, fouled=fouled)
+
+            else:
+                print("Неизвестная команда")
+
+def main():
+    controller = GameController()
+    controller.console_menu()
 
 if __name__ == "__main__":
-    game = GameController()
-    if not os.path.exists("actions.json"):
-        with open("actions.json", "w", encoding='utf-8') as f:
-            f.write("""[
-                {"action": "setup", "type": "football", "team1": "Liverpool", "team2": "ManCity"},
-                {"action": "add_player", "team": "Liverpool", "number": 11, "x": 100, "y": 34},
-                {"action": "add_player", "team": "ManCity", "number": 3, "x": 102, "y": 34},
-                {"action": "move_ball", "x": 106, "y": 34},
-                {"action": "check_score"},
-                {"action": "foul", "fouler_team": "ManCity", "fouler_num": 3, "fouled_team": "Liverpool", "fouled_num": 11}
-            ]""")
-    fname = input("Имя файла (default: actions.json): ")
-    if not fname: fname = "actions.json"
-    game.load_scenario(fname)
+    main()
