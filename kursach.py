@@ -92,7 +92,7 @@ class Basketballer(Player):
         self.fouls = {"P": 0, "T": 0}
 
 class Scoreboard:
-    def __init__(self, team1, team2):
+    def __init__(self, team1: Team, team2: Team):
         self.team1 = team1; self.team2 = team2; self.score = {"team1": 0, "team2": 0}
     def display(self):
         print(f"--- СЧЕТ: {self.team1} [{self.score['team1']}] : [{self.score['team2']}] {self.team2} ---")
@@ -133,6 +133,25 @@ class FRS(SRS):
             self.tablo.score["team2"] += 1; print(f">>> ГОЛ {self.tablo.team2}!")
         else:
             print(">>> СУДЬЯ: Нет гола.")
+    def check_offside(self, ball: Ball, attacker: Footballer, defend: Team):
+        if attacker.team.name == self.tablo.team1:
+            defenders = sorted(defend.players, key=lambda p: p.position.x, reverse=True)
+            last_def = defenders[1]
+
+            if (attacker.position.x > last_def.position.x and
+                    attacker.position.x > ball.position.x and
+                    attacker.position.x > self.field.length / 2):
+                print(">>> СУДЬЯ: Офсайд")
+            else: print(">>> СУДЬЯ: Игрок в правильном положении")
+        else:
+            defenders = sorted(defend.players, key=lambda p: p.position.x)
+            last_def = defenders[1]
+
+            if (attacker.position.x < last_def.position.x and
+                    attacker.position.x < ball.position.x and
+                    attacker.position.x < self.field.length / 2):
+                print(">>> СУДЬЯ: Офсайд")
+            else: print(">>> СУДЬЯ: Игрок в правильном положении")
 
 class BRS(SRS):
     def ejection(self, fouler: Basketballer):
@@ -188,6 +207,10 @@ class FootballRules(GameRules):
         fouled = kwargs.get("fouled")
         if fouler and fouled:
             referee.foul(fouler, fouled)
+    def handle_offside(self, referee: FRS, ball: Ball, **kwargs):
+        attacker = kwargs.get("attacker")
+        defend = kwargs.get("defend")
+        referee.check_offside(ball, attacker, defend)
 
 class BasketballRules(GameRules):
     def create_field(self):
@@ -262,9 +285,9 @@ class GameController:
                 self.move_ball(act["x"], act["y"])
 
             elif act["action"] == "check_score":
-                if isinstance(self.referee, FRS):  # football
+                if isinstance(self.referee, FRS):
                     self.rules.handle_score(self.referee, self.ball, self.teams)
-                else:  # basketball
+                else:
                     shooter_team = act.get("team")
                     shooter_number = act.get("number")
                     shooter = self.teams[shooter_team].get_player(shooter_number)
@@ -315,12 +338,17 @@ class GameController:
                 fouler = self.teams[act["team"]].get_player(act["number"])
                 self.referee.ejection(fouler)
 
+            elif act["action"] == "check_offside":
+                attacker = self.teams[act["team"]].get_player(act["number"])
+                defend = self.teams[act["defend"]]
+                self.rules.handle_offside(self.referee, self.ball, attacker=attacker, defend=defend)
+
     def console_menu(self):
         while True:
             print("\n=== ГЛАВНОЕ МЕНЮ ===")
-            print("1 — Загрузить полный матч")
-            print("2 — Запустить эпизод (ручной режим)")
-            print("0 — Выход")
+            print("1 - Загрузить полный матч")
+            print("2 - Запустить эпизод (ручной режим)")
+            print("0 - Выход")
             cmd = input("> ")
 
             if cmd == "0":
@@ -346,13 +374,14 @@ class GameController:
                 self.process_actions(actions)
                 while True:
                     print("\nВыберите действие:")
-                    print("1 — check_score")
-                    print("2 — check_out")
+                    print("1 - check_score")
+                    print("2 - check_out")
                     if isinstance(self.referee, FRS):
-                        print("3 — foul")
+                        print("3 - foul")
+                        print("4 - offside")
                     else:
-                        print("3 — shooting_foul")
-                    print("0 — назад")
+                        print("3 - shooting_foul")
+                    print("0 - назад")
                     sub = input("> ")
 
                     if sub == "0":
@@ -425,6 +454,26 @@ class GameController:
                                 continue
                             self.rules.handle_foul(self.referee, self.teams,
                                                    type="shooting", fouler=fouler, fouled=fouled)
+
+                    elif sub == "4":
+                        print("Проверка на офсайд:")
+                        team_attacker = input("Команда нападающего: ")
+                        try:
+                            num_attacker = int(input("Номер нападающего: "))
+                        except:
+                            print("Некорректный номер.")
+                            continue
+                        attacker_team = self.teams.get(team_attacker)
+                        attacker = attacker_team.get_player(num_attacker) if attacker_team else None
+                        if not attacker:
+                            print("Нет такого игрока.")
+                            continue
+                        team_defend = input("Защищающаяся команда: ")
+                        if team_defend not in self.teams:
+                            print("Нет такой команды.")
+                            continue
+                        defend = self.teams.get(team_defend)
+                        self.rules.handle_offside(self.referee, self.ball, attacker=attacker, defend=defend)
             else:
                 print("Неизвестная команда")
 
