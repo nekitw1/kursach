@@ -393,11 +393,11 @@ class GameController:
                     print("1 - Проверка на выход мяча за границы")
                     if isinstance(self.referee, FRS):
                         print("2 - Проверка гола")
-                        print("3 - Проверка фола(свободный удар или пенальти)")
+                        print("3 - Проверка фола (свободный удар или пенальти)")
                         print("4 - Проверка офсайда")
                     else:
-                        print("2 - Проверка точного броска(сколько очков засчитать)")
-                        print("3 - Проверка броскового фола(сколько штрафных)")
+                        print("2 - Проверка точного броска (сколько очков засчитать)")
+                        print("3 - Проверка броскового фола (сколько штрафных)")
                         print("4 - Проверка правила зоны (backcourt)")
                     print("0 - назад")
                     sub = input("> ")
@@ -405,7 +405,10 @@ class GameController:
                     if sub == "0":
                         break
 
-                    if sub == "1":
+                    elif sub == "1":
+                        self.referee.check_out(self.ball)
+
+                    if sub == "2":
                         if isinstance(self.referee, FRS):
                             self.rules.handle_score(self.referee, self.ball, self.teams)
                         else:
@@ -424,9 +427,6 @@ class GameController:
                                 print("Нет такого игрока.")
                                 continue
                             self.rules.handle_score(self.referee, self.ball, self.teams, shooter=shooter)
-
-                    elif sub == "2":
-                        self.referee.check_out(self.ball)
 
                     elif sub == "3":
                         team_name = input("Команда нарушителя: ")
