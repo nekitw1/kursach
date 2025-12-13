@@ -19,8 +19,7 @@ class Field:
 
 class Goal:
     def __init__(self, x, y):
-        self.x = x
-        self.__width = 7.32
+        self.x = x; self.__width = 7.32
         self.post1 = y + self.__width / 2
         self.post2 = y - self.__width / 2
 
@@ -36,9 +35,9 @@ class PenaltyArea:
             self.x0 = self.x0 - self.__length
             self.y0 = self.__y_center - self.__width / 2
             self.y1 = self.__y_center + self.__width / 2
-    def is_inside(self, fouled: Footballer):
-        x_inside = self.x0 <= fouled.position.x <= self.x1
-        y_inside = self.y0 <= fouled.position.y <= self.y1
+    def is_inside(self, player: Footballer):
+        x_inside = self.x0 <= player.position.x <= self.x1
+        y_inside = self.y0 <= player.position.y <= self.y1
         return x_inside and y_inside
 
 class Pitch(Field):
@@ -57,7 +56,8 @@ class ThreePtLine:
     def __init__(self, basket: Basket, radius=6.75):
         self.__position = basket.position; self.radius = radius
     def is_threept(self, shooter):
-        return math.hypot(shooter.position.x - self.__position.x, shooter.position.y - self.__position.y) > self.radius
+        return math.hypot(shooter.position.x - self.__position.x,
+                          shooter.position.y - self.__position.y) > self.radius
 
 class Court(Field):
     def __init__(self, length, width):
@@ -101,8 +101,8 @@ class SRS:
     def __init__(self, field, tablo):
         self.field = field; self.tablo = tablo
     def check_out(self, ball: Ball):
-        if ball.position.x < 0 or ball.position.x > self.field.length \
-                or ball.position.y < 0 or ball.position.y > self.field.width:
+        if (ball.position.x < 0 or ball.position.x > self.field.length or
+                ball.position.y < 0 or ball.position.y > self.field.width):
             print(">>> СУДЬЯ: Аут!")
         else:
             print(">>> СУДЬЯ: Мяч в поле.")
@@ -181,15 +181,15 @@ class BRS(SRS):
             self.tablo.score["team1"] += points
         else:
             self.tablo.score["team2"] += points
-        print(f">>> СУДЬЯ: +{points} очков команде {shooter.team.name}!")
+        print(f">>> СУДЬЯ: +{points} очка команде {shooter.team.name}!")
     def check_backcourt(self, player: Basketballer):
         if player.team.name == self.tablo.team1:
             if player.position.x < self.field.length / 2:
-                print(">>> СУДЬЯ: Нарушение правила зоны зафиксировано")
+                print(">>> СУДЬЯ: Нарушение правила зоны")
             else: print(">>> СУДЬЯ: Игрок в правильном положении")
         else:
             if player.position.x > self.field.length / 2:
-                print(">>> СУДЬЯ: Нарушение правила зоны зафиксировано")
+                print(">>> СУДЬЯ: Нарушение правила зоны")
             else: print(">>> СУДЬЯ: Игрок в правильном положении")
 
 class GameRules:
@@ -390,14 +390,15 @@ class GameController:
                 self.process_actions(actions)
                 while True:
                     print("\nВыберите действие:")
-                    print("1 - check_score")
-                    print("2 - check_out")
+                    print("2 - Проверка на выход мяча за границы")
                     if isinstance(self.referee, FRS):
-                        print("3 - foul")
-                        print("4 - check_offside")
+                        print("1 - Проверка гола")
+                        print("3 - Проверка фола(свободный удар или пенальти)")
+                        print("4 - Проверка офсайда")
                     else:
-                        print("3 - shooting_foul")
-                        print("4 - check_backcourt")
+                        print("1 - Проверка точного броска(сколько очков засчитать)")
+                        print("3 - Проверка броскового фола(сколько штрафных)")
+                        print("4 - Проверка правила зоны (backcourt)")
                     print("0 - назад")
                     sub = input("> ")
 
@@ -408,7 +409,7 @@ class GameController:
                         if isinstance(self.referee, FRS):
                             self.rules.handle_score(self.referee, self.ball, self.teams)
                         else:
-                            print("Введите данные бросающего игрока:")
+                            print("Введите данные забросившего игрока:")
                             team_name = input("Команда: ")
                             if team_name not in self.teams:
                                 print("Нет такой команды.")
@@ -492,7 +493,7 @@ class GameController:
                             self.rules.handle_offside(self.referee, self.ball,
                                                       attacker=attacker, defend=defend)
                         else:
-                            print("Проверка правила задней зоны (backcourt):")
+                            print("Проверка правила зоны (backcourt):")
                             team_name = input("Команда игрока: ")
                             if team_name not in self.teams:
                                 print("Нет такой команды.")
