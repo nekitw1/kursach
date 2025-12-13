@@ -182,6 +182,15 @@ class BRS(SRS):
         else:
             self.tablo.score["team2"] += points
         print(f">>> СУДЬЯ: +{points} очков команде {shooter.team.name}!")
+    def check_backcourt(self, player: Basketballer):
+        if player.team.name == self.tablo.team1:
+            if player.position.x < self.field.length / 2:
+                print(">>> СУДЬЯ: Нарушение правила зоны зафиксировано")
+            else: print(">>> СУДЬЯ: Игрок в правильном положении")
+        else:
+            if player.position.x > self.field.length / 2:
+                print(">>> СУДЬЯ: Нарушение правила зоны зафиксировано")
+            else: print(">>> СУДЬЯ: Игрок в правильном положении")
 
 class GameRules:
     def create_field(self): raise NotImplementedError
@@ -235,6 +244,9 @@ class BasketballRules(GameRules):
             referee.shooting_foul(fouler, fouled)
         else:
             referee.foul(fouler)
+    def handle_backcourt(self, referee: BRS, **kwargs):
+        player = kwargs.get("player")
+        referee.check_backcourt(player)
 
 class GameController:
     def __init__(self):
@@ -343,6 +355,10 @@ class GameController:
                 defend = self.teams[act["defend"]]
                 self.rules.handle_offside(self.referee, self.ball, attacker=attacker, defend=defend)
 
+            elif act["action"] == "check_backcourt":
+                player = self.teams[act["team"]].get_player(act["number"])
+                self.referee.check_backcourt(player=player)
+
     def console_menu(self):
         while True:
             print("\n=== ГЛАВНОЕ МЕНЮ ===")
@@ -378,9 +394,10 @@ class GameController:
                     print("2 - check_out")
                     if isinstance(self.referee, FRS):
                         print("3 - foul")
-                        print("4 - offside")
+                        print("4 - check_offside")
                     else:
                         print("3 - shooting_foul")
+                        print("4 - check_backcourt")
                     print("0 - назад")
                     sub = input("> ")
 
@@ -436,11 +453,9 @@ class GameController:
                             if not fouled:
                                 print("Нет такого игрока.")
                                 continue
-                            print("Футбольный фол:")
                             self.rules.handle_foul(self.referee, self.teams,
                                                    fouler=fouler, fouled=fouled)
                         else:
-                            print("Бросковый фол:")
                             team_fouled = input("Команда пострадавшего: ")
                             try:
                                 num_fouled = int(input("Номер пострадавшего: "))
@@ -456,24 +471,42 @@ class GameController:
                                                    type="shooting", fouler=fouler, fouled=fouled)
 
                     elif sub == "4":
-                        print("Проверка на офсайд:")
-                        team_attacker = input("Команда нападающего: ")
-                        try:
-                            num_attacker = int(input("Номер нападающего: "))
-                        except:
-                            print("Некорректный номер.")
-                            continue
-                        attacker_team = self.teams.get(team_attacker)
-                        attacker = attacker_team.get_player(num_attacker) if attacker_team else None
-                        if not attacker:
-                            print("Нет такого игрока.")
-                            continue
-                        team_defend = input("Защищающаяся команда: ")
-                        if team_defend not in self.teams:
-                            print("Нет такой команды.")
-                            continue
-                        defend = self.teams.get(team_defend)
-                        self.rules.handle_offside(self.referee, self.ball, attacker=attacker, defend=defend)
+                        if isinstance(self.referee, FRS):
+                            print("Проверка на офсайд:")
+                            team_attacker = input("Команда нападающего: ")
+                            try:
+                                num_attacker = int(input("Номер нападающего: "))
+                            except:
+                                print("Некорректный номер.")
+                                continue
+                            attacker_team = self.teams.get(team_attacker)
+                            attacker = attacker_team.get_player(num_attacker) if attacker_team else None
+                            if not attacker:
+                                print("Нет такого игрока.")
+                                continue
+                            team_defend = input("Защищающаяся команда: ")
+                            if team_defend not in self.teams:
+                                print("Нет такой команды.")
+                                continue
+                            defend = self.teams.get(team_defend)
+                            self.rules.handle_offside(self.referee, self.ball,
+                                                      attacker=attacker, defend=defend)
+                        else:
+                            print("Проверка правила задней зоны (backcourt):")
+                            team_name = input("Команда игрока: ")
+                            if team_name not in self.teams:
+                                print("Нет такой команды.")
+                                continue
+                            try:
+                                number = int(input("Номер игрока: "))
+                            except:
+                                print("Некорректный номер.")
+                                continue
+                            player = self.teams[team_name].get_player(number)
+                            if not player:
+                                print("Нет такого игрока.")
+                                continue
+                            self.rules.handle_backcourt(self.referee, player=player)
             else:
                 print("Неизвестная команда")
 
