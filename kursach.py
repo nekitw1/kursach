@@ -184,11 +184,11 @@ class BRS(SRS):
         print(f">>> СУДЬЯ: +{points} очка команде {shooter.team.name}!")
     def check_backcourt(self, player: Basketballer):
         if player.team.name == self.tablo.team1:
-            if player.position.x < self.field.length / 2:
+            if player.position.x <= self.field.length / 2:
                 print(">>> СУДЬЯ: Нарушение правила зоны")
             else: print(">>> СУДЬЯ: Игрок в правильном положении")
         else:
-            if player.position.x > self.field.length / 2:
+            if player.position.x >= self.field.length / 2:
                 print(">>> СУДЬЯ: Нарушение правила зоны")
             else: print(">>> СУДЬЯ: Игрок в правильном положении")
 
