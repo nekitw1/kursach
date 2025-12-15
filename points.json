@@ -1,0 +1,5 @@
+[
+  { "action": "setup", "type": "basketball", "team1": "Lakers", "team2": "Celtics" },
+  { "action": "add_player", "team": "Lakers", "number": 23, "x": 15, "y": 7 },
+  { "action": "add_player", "team": "Celtics", "number": 7,  "x": 5, "y": 7 }
+]
