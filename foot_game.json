@@ -1,0 +1,100 @@
+[
+  {
+    "action": "setup",
+    "type": "football",
+    "team1": "Spartak",
+    "team2": "Dynamo"
+  },
+
+  { "action": "add_player", "team": "Spartak", "number": 1, "x": 5, "y": 34 },
+  { "action": "add_player", "team": "Spartak", "number": 4, "x": 20, "y": 20 },
+  { "action": "add_player", "team": "Spartak", "number": 6, "x": 30, "y": 34 },
+  { "action": "add_player", "team": "Spartak", "number": 9, "x": 60, "y": 34 },
+  { "action": "add_player", "team": "Spartak", "number": 10, "x": 55, "y": 40 },
+  { "action": "add_player", "team": "Spartak", "number": 11, "x": 50, "y": 28 },
+  { "action": "add_player", "team": "Spartak", "number": 2, "x": 15, "y": 50 },
+
+  { "action": "add_player", "team": "Dynamo", "number": 1, "x": 100, "y": 34 },
+  { "action": "add_player", "team": "Dynamo", "number": 3, "x": 85, "y": 30 },
+  { "action": "add_player", "team": "Dynamo", "number": 5, "x": 75, "y": 34 },
+  { "action": "add_player", "team": "Dynamo", "number": 8, "x": 60, "y": 42 },
+  { "action": "add_player", "team": "Dynamo", "number": 9, "x": 95, "y": 34 },
+  { "action": "add_player", "team": "Dynamo", "number": 11, "x": 70, "y": 28 },
+  { "action": "add_player", "team": "Dynamo", "number": 4, "x": 90, "y": 50 },
+
+  { "action": "move_ball", "x": 56, "y": 34 },
+  { "action": "move_ball", "x": 64, "y": 34 },
+  { "action": "move_ball", "x": 88, "y": 34 },
+
+  {
+    "action": "foul",
+    "team_fouler": "Dynamo",
+    "fouler": 3,
+    "team_fouled": "Spartak",
+    "fouled": 9
+  },
+
+  { "action": "move_ball", "x": 95, "y": 34 },
+  { "action": "move_ball", "x": 106, "y": 34 },
+  { "action": "check_score" },
+
+  { "action": "move_ball", "x": 80, "y": 34 },
+  { "action": "move_ball", "x": 70, "y": 34 },
+
+  {
+    "action": "booking",
+    "team": "Dynamo",
+    "number": 5
+  },
+
+  { "action": "move_ball", "x": 45, "y": 30 },
+  { "action": "move_ball", "x": 60, "y": 28 },
+  { "action": "move_ball", "x": 86, "y": 34 },
+
+  {
+    "action": "booking",
+    "team": "Dynamo",
+    "number": 5
+  },
+
+  { "action": "move_ball", "x": 106, "y": 33.5 },
+  { "action": "check_score" },
+
+  { "action": "move_ball", "x": 107, "y": 10 },
+  { "action": "check_out" },
+
+  { "action": "move_ball", "x": 2, "y": 34 },
+  { "action": "check_score" },
+
+  { "action": "move_ball", "x": 10, "y": 34 },
+  {
+    "action": "foul",
+    "team_fouler": "Spartak",
+    "fouler": 4,
+    "team_fouled": "Dynamo",
+    "fouled": 9
+  },
+
+  { "action": "move_ball", "x": -1, "y": 34 },
+  { "action": "check_score" },
+
+  { "action": "move_ball", "x": 50, "y": 34 },
+  { "action": "move_ball", "x": 55, "y": 36 },
+
+  { "action": "booking", "team": "Spartak", "number": 6 },
+
+  {
+    "action": "foul",
+    "team_fouler": "Dynamo",
+    "fouler": 8,
+    "team_fouled": "Spartak",
+    "fouled": 10
+  },
+
+  { "action": "move_ball", "x": 52.5, "y": 34 },
+
+  { "action": "move_ball", "x": 105.5, "y": 34 },
+  { "action": "check_score" },
+
+  { "action": "check_score" }
+]
