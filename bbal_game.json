@@ -1,0 +1,111 @@
+[
+  {
+    "action": "setup",
+    "type": "basketball",
+    "team1": "Lakers",
+    "team2": "Celtics"
+  },
+
+  { "action": "add_player", "team": "Lakers", "number": 1,  "x": 5,  "y": 7.5 },
+  { "action": "add_player", "team": "Lakers", "number": 2,  "x": 8,  "y": 6 },
+  { "action": "add_player", "team": "Lakers", "number": 3,  "x": 10, "y": 10 },
+  { "action": "add_player", "team": "Lakers", "number": 4,  "x": 12, "y": 5 },
+  { "action": "add_player", "team": "Lakers", "number": 5,  "x": 6,  "y": 12 },
+
+  { "action": "add_player", "team": "Celtics", "number": 6,  "x": 20, "y": 7.5 },
+  { "action": "add_player", "team": "Celtics", "number": 7,  "x": 18, "y": 6 },
+  { "action": "add_player", "team": "Celtics", "number": 8,  "x": 15, "y": 10 },
+  { "action": "add_player", "team": "Celtics", "number": 9,  "x": 17, "y": 5 },
+  { "action": "add_player", "team": "Celtics", "number": 10, "x": 22, "y": 12 },
+
+  { "action": "move_ball", "x": 14, "y": 7.5 },
+  { "action": "move_ball", "x": 10, "y": 7.5 },
+
+  {
+    "action": "foul",
+    "team_fouler": "Celtics",
+    "fouler": 8,
+    "team_fouled": "Lakers",
+    "fouled": 3
+  },
+
+  {
+    "action": "check_score",
+    "team": "Lakers",
+    "number": 3
+  },
+
+  { "action": "move_ball", "x": 20, "y": 7.5 },
+
+  {
+    "action": "technical_foul",
+    "team": "Celtics",
+    "number": 7
+  },
+
+  {
+    "action": "check_score",
+    "team": "Lakers",
+    "number": 1
+  },
+
+  { "action": "move_ball", "x": 18, "y": 7.5 },
+
+  {
+    "action": "shooting_foul",
+    "team_fouler": "Lakers",
+    "fouler": 4,
+    "team_fouled": "Celtics",
+    "fouled": 9
+  },
+
+  {
+    "action": "check_score",
+    "team": "Celtics",
+    "number": 9
+  },
+
+  { "action": "move_ball", "x": 12, "y": 10 },
+
+  {
+    "action": "foul",
+    "team_fouler": "Celtics",
+    "fouler": 6,
+    "team_fouled": "Lakers",
+    "fouled": 5
+  },
+
+  {
+    "action": "check_score",
+    "team": "Lakers",
+    "number": 5
+  },
+
+  { "action": "move_ball", "x": 15, "y": 3 },
+
+  {
+    "action": "check_score",
+    "team": "Celtics",
+    "number": 10
+  },
+
+  {
+    "action": "technical_foul",
+    "team": "Lakers",
+    "number": 2
+  },
+
+  { "action": "move_ball", "x": 14, "y": 7.5 },
+
+  {
+    "action": "check_score",
+    "team": "Lakers",
+    "number": 3
+  },
+
+  {
+    "action": "check_score",
+    "team": "Celtics",
+    "number": 6
+  }
+]
