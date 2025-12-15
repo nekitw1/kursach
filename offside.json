@@ -1,0 +1,7 @@
+[
+  {"action": "setup", "type": "football", "team1": "Liverpool", "team2": "ManCity"},
+  {"action": "add_player", "team": "Liverpool", "number": 1, "x": 1, "y": 34},
+  {"action": "add_player", "team": "Liverpool", "number": 4, "x": 15, "y": 34},
+  {"action": "add_player", "team": "ManCity", "number": 9, "x": 10, "y": 34},
+  {"action": "move_ball", "x": 25, "y": 34}
+]
